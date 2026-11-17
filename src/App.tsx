@@ -9,7 +9,7 @@ import { DesVisualizer } from './components/DesVisualizer';
 import { ModuleId } from './types/crypto';
 
 export function App() {
-  const [activeModule, setActiveModule] = useState<ModuleId>('aes');
+  const [activeModule, setActiveModule] = useState<ModuleId>('ecc');
   const [isDossierOpen, setIsDossierOpen] = useState<boolean>(false);
 
   return (

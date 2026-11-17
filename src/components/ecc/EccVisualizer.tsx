@@ -60,10 +60,21 @@ export const EccVisualizer: React.FC = () => {
   </label>;
 
   return <div className="space-y-5">
+    <section className="rounded-xl border border-sky-200 bg-sky-50 p-5">
+      <p className="text-xs font-bold uppercase tracking-wide text-sky-800">First: the key exchange idea</p>
+      <h1 className="mt-1 text-xl font-bold text-slate-900">Diffie–Hellman: agree on a secret in public</h1>
+      <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-700">Two people share public numbers, but each keeps a private number secret. They combine the other person’s public value with their own private value. Both sides arrive at the same shared secret without sending that secret across the network.</p>
+      <ol className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
+        <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>1. Agree:</strong> enter the same prime and generator.</li>
+        <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>2. Keep private:</strong> each person enters their own secret number.</li>
+        <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>3. Share:</strong> exchange the public values shown below.</li>
+        <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>4. Compare:</strong> both calculate the same shared secret.</li>
+      </ol>
+    </section>
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3"><Users className="mt-1 h-5 w-5 text-sky-700" /><div>
-        <h2 className="text-lg font-bold text-slate-800">Build a shared secret with Diffie–Hellman</h2>
-        <p className="mt-1 text-sm text-slate-600">Enter the public settings and the two people’s private numbers. The page calculates their public values and checks that both get the same shared secret.</p>
+        <h2 className="text-lg font-bold text-slate-800">Full key exchange simulator</h2>
+        <p className="mt-1 text-sm text-slate-600">Enter the four values to calculate both public keys, both shared-secret calculations, and whether the results match.</p>
       </div></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {field('Public prime (p)', 'Both people can see this number.', prime, setPrime)}
@@ -78,13 +89,13 @@ export const EccVisualizer: React.FC = () => {
     {exchange && <section className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm space-y-4">
       <h3 className="text-base font-bold text-slate-800">Your results</h3>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Alice’s public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{exchange.publicAlice.toString()}</p></div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob’s public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{exchange.publicBob.toString()}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Alice shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{generator}^{alicePrivate} mod {prime} = {exchange.publicAlice.toString()}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{generator}^{bobPrivate} mod {prime} = {exchange.publicBob.toString()}</p></div>
       </div>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"><ShieldCheck className="h-5 w-5" /><span className="font-bold">{exchange.secretAlice === exchange.secretBob ? 'Both people calculated the same shared secret.' : 'The shared values do not match. Check the inputs.'}</span></div>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Alice’s calculation</p><p className="mt-1 break-all font-mono text-sm">{exchange.secretAlice.toString()}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500">Bob’s public value raised to Alice’s private number <ArrowRight className="h-3 w-3" /></p></div>
-        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Bob’s calculation</p><p className="mt-1 break-all font-mono text-sm">{exchange.secretBob.toString()}</p><p className="mt-1 text-xs text-slate-500">Alice’s public value raised to Bob’s private number</p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Alice calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicBob.toString()}^{alicePrivate} mod {prime} = {exchange.secretAlice.toString()}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500">Bob’s public value raised to Alice’s private number <ArrowRight className="h-3 w-3" /></p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Bob calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicAlice.toString()}^{bobPrivate} mod {prime} = {exchange.secretBob.toString()}</p><p className="mt-1 text-xs text-slate-500">Alice’s public value raised to Bob’s private number</p></div>
       </div>
     </section>}
   </div>;

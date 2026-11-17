@@ -15,6 +15,12 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navItems: { id: ModuleId; label: string; icon: React.ReactNode; tag: string }[] = [
     {
+      id: 'ecc',
+      label: 'Diffie–Hellman',
+      icon: <GitBranch className="w-4 h-4" />,
+      tag: 'Key exchange',
+    },
+    {
       id: 'aes',
       label: 'AES basics',
       icon: <Cpu className="w-4 h-4" />,
@@ -31,12 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
       label: 'Protect messages',
       icon: <Layers className="w-4 h-4" />,
       tag: 'NIST SP 800-38',
-    },
-    {
-      id: 'ecc',
-      label: 'Share secret keys',
-      icon: <GitBranch className="w-4 h-4" />,
-      tag: 'Diffie–Hellman',
     },
   ];
 
