@@ -70,6 +70,16 @@ export const EccVisualizer: React.FC = () => {
         <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>3. Share:</strong> exchange the public values shown below.</li>
         <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>4. Compare:</strong> both calculate the same shared secret.</li>
       </ol>
+      <h2 className="mt-5 text-base font-bold text-slate-900">What the numbers mean</h2>
+      <div className="mt-2 grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-sky-200 bg-white p-3"><strong className="text-slate-900">Prime (p)</strong><p className="mt-1 text-sm text-slate-600">A public prime number. All calculations wrap around at this number, keeping results within a known range.</p></div>
+        <div className="rounded-lg border border-sky-200 bg-white p-3"><strong className="text-slate-900">Generator (g)</strong><p className="mt-1 text-sm text-slate-600">A public starting number used by both people to create their public values.</p></div>
+        <div className="rounded-lg border border-sky-200 bg-white p-3"><strong className="text-slate-900">Private numbers (a and b)</strong><p className="mt-1 text-sm text-slate-600">Secret values known only to Alice and Bob. They must never be sent to the other person.</p></div>
+      </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div className="rounded-lg border border-sky-200 bg-white p-3"><strong className="text-slate-900">Why do both sides match?</strong><p className="mt-1 font-mono text-sm text-sky-900">(gᵇ)ᵃ mod p = gᵃᵇ mod p = (gᵃ)ᵇ mod p</p><p className="mt-1 text-sm text-slate-600">Both sides effectively raise the same public generator to the product of the two private numbers. The private numbers themselves are not exchanged.</p></div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3"><strong className="text-amber-950">Important security limit</strong><p className="mt-1 text-sm text-amber-900">Basic Diffie–Hellman does not prove who sent a public value. An attacker could replace values in transit. Real protocols authenticate the exchange, for example with digital signatures and certificates.</p></div>
+      </div>
     </section>
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3"><Users className="mt-1 h-5 w-5 text-sky-700" /><div>
@@ -77,10 +87,10 @@ export const EccVisualizer: React.FC = () => {
         <p className="mt-1 text-sm text-slate-600">Enter the four values to calculate both public keys, both shared-secret calculations, and whether the results match.</p>
       </div></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        {field('Public prime (p)', 'Both people can see this number.', prime, setPrime)}
-        {field('Public generator (g)', 'Both people use the same generator.', generator, setGenerator)}
-        {field('Alice’s private number (a)', 'Keep this number secret.', alicePrivate, setAlicePrivate)}
-        {field('Bob’s private number (b)', 'Keep this number secret.', bobPrivate, setBobPrivate)}
+        {field('Public prime (p)', 'Shared openly. Every calculation uses the remainder after division by p.', prime, setPrime)}
+        {field('Public generator (g)', 'Shared openly. Both people start their calculations with this number.', generator, setGenerator)}
+        {field('Alice’s private number (a)', 'Only Alice knows this. She uses it to create her public value and shared secret.', alicePrivate, setAlicePrivate)}
+        {field('Bob’s private number (b)', 'Only Bob knows this. He uses it to create his public value and shared secret.', bobPrivate, setBobPrivate)}
       </div>
       <button onClick={calculate} className="mt-5 rounded-lg bg-sky-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Calculate shared secret</button>
       <p className="mt-3 text-xs text-slate-500">The prime is checked with a probabilistic primality test. This classroom calculator is for learning; production key exchange needs vetted libraries and authenticated public keys.</p>
@@ -93,6 +103,7 @@ export const EccVisualizer: React.FC = () => {
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{generator}^{bobPrivate} mod {prime} = {exchange.publicBob.toString()}</p></div>
       </div>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"><ShieldCheck className="h-5 w-5" /><span className="font-bold">{exchange.secretAlice === exchange.secretBob ? 'Both people calculated the same shared secret.' : 'The shared values do not match. Check the inputs.'}</span></div>
+      <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">An observer can see the prime, generator, and both public values. The observer does not see Alice’s or Bob’s private number. With properly chosen large parameters, working backward from a public value to its private number is computationally difficult.</p>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Alice calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicBob.toString()}^{alicePrivate} mod {prime} = {exchange.secretAlice.toString()}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500">Bob’s public value raised to Alice’s private number <ArrowRight className="h-3 w-3" /></p></div>
         <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Bob calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicAlice.toString()}^{bobPrivate} mod {prime} = {exchange.secretBob.toString()}</p><p className="mt-1 text-xs text-slate-500">Alice’s public value raised to Bob’s private number</p></div>
