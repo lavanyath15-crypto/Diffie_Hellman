@@ -54,9 +54,9 @@ export const EccVisualizer: React.FC = () => {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check the numbers and try again.'); }
   };
 
-  const field = (label: string, hint: string, value: string, change: (next: string) => void) => <label className="block text-sm font-semibold text-slate-700">{label}
+  const field = (label: string, hint: string, value: string, change: (next: string) => void, privateValue = false) => <label className="block text-sm font-semibold text-slate-700">{label}
     <span className="mt-0.5 block text-xs font-normal text-slate-500">{hint}</span>
-    <input inputMode="numeric" value={value} onChange={e => change(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-slate-800" placeholder="Enter a whole number" />
+    <input type={privateValue ? 'password' : 'text'} autoComplete={privateValue ? 'new-password' : 'off'} inputMode="numeric" value={value} onChange={e => change(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-slate-800" placeholder={privateValue ? 'Enter private number (hidden)' : 'Enter a whole number'} aria-label={privateValue ? `${label}, hidden private value` : label} />
   </label>;
 
   return <div className="space-y-5">
@@ -89,8 +89,8 @@ export const EccVisualizer: React.FC = () => {
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {field('Public prime (p)', 'Shared openly. Every calculation uses the remainder after division by p.', prime, setPrime)}
         {field('Public generator (g)', 'Shared openly. Both people start their calculations with this number.', generator, setGenerator)}
-        {field('Alice’s private number (a)', 'Only Alice knows this. She uses it to create her public value and shared secret.', alicePrivate, setAlicePrivate)}
-        {field('Bob’s private number (b)', 'Only Bob knows this. He uses it to create his public value and shared secret.', bobPrivate, setBobPrivate)}
+        {field('Alice’s private number (a)', 'Hidden while typing. Only Alice should know this value.', alicePrivate, setAlicePrivate, true)}
+        {field('Bob’s private number (b)', 'Hidden while typing. Only Bob should know this value.', bobPrivate, setBobPrivate, true)}
       </div>
       <button onClick={calculate} className="mt-5 rounded-lg bg-sky-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Calculate shared secret</button>
       <p className="mt-3 text-xs text-slate-500">The prime is checked with a probabilistic primality test. This classroom calculator is for learning; production key exchange needs vetted libraries and authenticated public keys.</p>
@@ -99,14 +99,14 @@ export const EccVisualizer: React.FC = () => {
     {exchange && <section className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm space-y-4">
       <h3 className="text-base font-bold text-slate-800">Your results</h3>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Alice shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{generator}^{alicePrivate} mod {prime} = {exchange.publicAlice.toString()}</p></div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">{generator}^{bobPrivate} mod {prime} = {exchange.publicBob.toString()}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Alice shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">gᵃ mod p = {exchange.publicAlice.toString()}</p></div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">gᵇ mod p = {exchange.publicBob.toString()}</p></div>
       </div>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-900"><ShieldCheck className="h-5 w-5" /><span className="font-bold">{exchange.secretAlice === exchange.secretBob ? 'Both people calculated the same shared secret.' : 'The shared values do not match. Check the inputs.'}</span></div>
       <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">An observer can see the prime, generator, and both public values. The observer does not see Alice’s or Bob’s private number. With properly chosen large parameters, working backward from a public value to its private number is computationally difficult.</p>
       <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Alice calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicBob.toString()}^{alicePrivate} mod {prime} = {exchange.secretAlice.toString()}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500">Bob’s public value raised to Alice’s private number <ArrowRight className="h-3 w-3" /></p></div>
-        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Bob calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">{exchange.publicAlice.toString()}^{bobPrivate} mod {prime} = {exchange.secretBob.toString()}</p><p className="mt-1 text-xs text-slate-500">Alice’s public value raised to Bob’s private number</p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Alice calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">Bᵃ mod p = {exchange.secretAlice.toString()}</p><p className="mt-1 flex items-center gap-1 text-xs text-slate-500">Alice uses her hidden private number with Bob’s public value <ArrowRight className="h-3 w-3" /></p></div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4"><p className="text-sm font-semibold text-slate-700">Bob calculates the shared secret</p><p className="mt-1 break-all font-mono text-sm">Aᵇ mod p = {exchange.secretBob.toString()}</p><p className="mt-1 text-xs text-slate-500">Bob uses his hidden private number with Alice’s public value</p></div>
       </div>
     </section>}
   </div>;
