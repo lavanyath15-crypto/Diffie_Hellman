@@ -38,6 +38,7 @@ export const EccVisualizer: React.FC = () => {
   const [alicePrivate, setAlicePrivate] = useState('');
   const [bobPrivate, setBobPrivate] = useState('');
   const [exchange, setExchange] = useState<Exchange | null>(null);
+  const [activeVisualStep, setActiveVisualStep] = useState(0);
   const [error, setError] = useState('');
 
   const calculate = () => {
@@ -98,6 +99,24 @@ export const EccVisualizer: React.FC = () => {
     </section>
     {exchange && <section className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm space-y-4">
       <h3 className="text-base font-bold text-slate-800">Your results</h3>
+      <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div><h4 className="font-bold text-slate-900">Watch the exchange happen</h4><p className="text-sm text-slate-600">Select a step to follow the values from setup through the shared secret.</p></div>
+          <div className="flex gap-2">
+            <button onClick={() => setActiveVisualStep(s => Math.max(0, s - 1))} disabled={activeVisualStep === 0} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold disabled:opacity-50">Previous</button>
+            <button onClick={() => setActiveVisualStep(s => Math.min(3, s + 1))} disabled={activeVisualStep === 3} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold disabled:opacity-50">Next step</button>
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {['Agree on public settings', 'Create public values', 'Exchange public values', 'Calculate shared secret'].map((title, index) => <button key={title} onClick={() => setActiveVisualStep(index)} aria-current={activeVisualStep === index ? 'step' : undefined} className={`rounded-lg border p-3 text-left text-sm font-semibold ${activeVisualStep === index ? 'border-sky-500 bg-white text-sky-900 ring-2 ring-sky-200' : 'border-sky-200 bg-sky-50 text-slate-600'}`}><span className="mb-1 block text-xs">STEP {index + 1}</span>{title}</button>)}
+        </div>
+        <div className="grid items-stretch gap-3 lg:grid-cols-[1fr_auto_1fr]">
+          <div className="rounded-lg border border-sky-200 bg-white p-4"><p className="font-bold text-slate-900">Alice</p><p className="mt-2 text-sm text-slate-600">{activeVisualStep === 0 ? 'Receives the public settings p and g.' : activeVisualStep === 1 ? 'Uses her hidden private number to create her public value.' : activeVisualStep === 2 ? 'Sends her public value A to Bob.' : 'Combines Bob’s public value with her hidden private number.'}</p>{activeVisualStep >= 1 && <p className="mt-2 break-all font-mono text-sm text-sky-800">{activeVisualStep === 3 ? `Shared secret: ${exchange.secretAlice}` : `Public value A: ${exchange.publicAlice}`}</p>}</div>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center"><span className="text-xs font-bold uppercase text-amber-900">{activeVisualStep === 0 ? 'Public settings' : activeVisualStep === 1 ? 'Private numbers stay local' : activeVisualStep === 2 ? 'Public channel' : 'Same result'}</span>{activeVisualStep === 2 ? <div className="space-y-1 text-sm font-mono text-amber-950"><p>A <ArrowRight className="inline h-4 w-4" /> Bob</p><p>B <ArrowRight className="inline h-4 w-4" /> Alice</p></div> : activeVisualStep === 3 ? <ShieldCheck className="h-6 w-6 text-emerald-700" /> : <span className="text-sm text-amber-950">{activeVisualStep === 0 ? `p = ${prime}, g = ${generator}` : 'Each private number is only used on its owner’s device.'}</span>}</div>
+          <div className="rounded-lg border border-emerald-200 bg-white p-4"><p className="font-bold text-slate-900">Bob</p><p className="mt-2 text-sm text-slate-600">{activeVisualStep === 0 ? 'Receives the same public settings p and g.' : activeVisualStep === 1 ? 'Uses his hidden private number to create his public value.' : activeVisualStep === 2 ? 'Sends his public value B to Alice.' : 'Combines Alice’s public value with his hidden private number.'}</p>{activeVisualStep >= 1 && <p className="mt-2 break-all font-mono text-sm text-emerald-800">{activeVisualStep === 3 ? `Shared secret: ${exchange.secretBob}` : `Public value B: ${exchange.publicBob}`}</p>}</div>
+        </div>
+        <p className="text-sm text-slate-700">{activeVisualStep === 0 ? 'Both participants start with the same public prime and generator.' : activeVisualStep === 1 ? 'Each participant calculates a public value. The private numbers are hidden and are never sent.' : activeVisualStep === 2 ? 'The public values can be observed in transit. The private numbers remain with Alice and Bob.' : `Both calculations produce ${exchange.secretAlice === exchange.secretBob ? 'the same' : 'different'} result. This shared result can then be passed through a key-derivation function to create encryption keys.`}</p>
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Alice shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">gᵃ mod p = {exchange.publicAlice.toString()}</p></div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-4"><p className="text-sm font-semibold text-slate-700">Bob shares this public value</p><p className="mt-1 break-all font-mono text-sm text-sky-800">gᵇ mod p = {exchange.publicBob.toString()}</p></div>
