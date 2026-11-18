@@ -39,9 +39,11 @@ export const EccVisualizer: React.FC = () => {
   const [bobPrivate, setBobPrivate] = useState('');
   const [exchange, setExchange] = useState<Exchange | null>(null);
   const [activeVisualStep, setActiveVisualStep] = useState(0);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
   const [error, setError] = useState('');
 
-  const calculate = () => {
+  const calculate = (): boolean => {
     setError(''); setExchange(null);
     try {
       if (![prime, generator, alicePrivate, bobPrivate].every(v => /^\d+$/.test(v))) throw new Error('Fill in all four boxes with whole numbers.');
@@ -52,19 +54,53 @@ export const EccVisualizer: React.FC = () => {
       if (a <= 0n || a >= p - 1n || b <= 0n || b >= p - 1n) throw new Error('Each private number must be between 1 and the prime minus 2.');
       const publicAlice = modPow(g, a, p), publicBob = modPow(g, b, p);
       setExchange({ publicAlice, publicBob, secretAlice: modPow(publicBob, a, p), secretBob: modPow(publicAlice, b, p) });
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check the numbers and try again.'); }
+      return true;
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Check the numbers and try again.'); return false; }
   };
 
   const field = (label: string, hint: string, value: string, change: (next: string) => void, privateValue = false) => <label className="block text-sm font-semibold text-slate-700">{label}
     <span className="mt-0.5 block text-xs font-normal text-slate-500">{hint}</span>
-    <input type={privateValue ? 'password' : 'text'} autoComplete={privateValue ? 'new-password' : 'off'} inputMode="numeric" value={value} onChange={e => change(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-slate-800" placeholder={privateValue ? 'Enter private number (hidden)' : 'Enter a whole number'} aria-label={privateValue ? `${label}, hidden private value` : label} />
+    <input type={privateValue ? 'password' : 'text'} autoComplete={privateValue ? 'new-password' : 'off'} inputMode="numeric" value={value} onChange={e => { change(e.target.value); setExchange(null); setError(''); }} className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-3 font-mono text-slate-800" placeholder={privateValue ? 'Enter private number (hidden)' : 'Enter a whole number'} aria-label={privateValue ? `${label}, hidden private value` : label} />
   </label>;
+
+  const wizardTitles = ['Public settings', 'Private numbers', 'Create public values', 'Exchange public values', 'Compare shared secrets'];
+  const advanceWizard = () => {
+    setError('');
+    if (wizardStep === 0) {
+      if (!/^\d+$/.test(prime) || !/^\d+$/.test(generator)) { setError('Enter a whole-number prime and generator to continue.'); return; }
+      const p = BigInt(prime), g = BigInt(generator);
+      if (p.toString(2).length > 2048) { setError('For this learning tool, use a prime with at most 2,048 bits.'); return; }
+      if (!isProbablePrime(p)) { setError('The modulus must be a prime number.'); return; }
+      if (g <= 1n || g >= p) { setError('The generator must be greater than 1 and less than the prime.'); return; }
+    }
+    if (wizardStep === 1 && !calculate()) return;
+    setWizardStep(step => Math.min(wizardTitles.length - 1, step + 1));
+  };
+
+  if (wizardOpen) return <section className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-5 shadow-lg sm:p-8">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><p className="text-xs font-bold uppercase tracking-wide text-sky-700">Guided Diffie–Hellman simulation</p><h1 className="mt-1 text-xl font-bold text-slate-900">Step {wizardStep + 1} of {wizardTitles.length}: {wizardTitles[wizardStep]}</h1></div>
+      <button onClick={() => { setWizardOpen(false); setError(''); }} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">Exit simulation</button>
+    </div>
+    <div className="mt-5 flex gap-1" aria-label={`Step ${wizardStep + 1} of ${wizardTitles.length}`}>{wizardTitles.map((title, index) => <div key={title} className={`h-2 flex-1 rounded-full ${index <= wizardStep ? 'bg-sky-600' : 'bg-slate-200'}`} />)}</div>
+    <p className="mt-4 text-sm text-slate-600">{wizardStep === 0 ? 'Alice and Bob first agree on two values that are safe to share openly.' : wizardStep === 1 ? 'Each person chooses a private number. The input is masked and stays out of the displayed public-value formulas.' : wizardStep === 2 ? 'Each person uses the public settings and their own private number to calculate a public value.' : wizardStep === 3 ? 'They send only their public values across the channel. An observer can see these values.' : 'Each person combines the other person’s public value with their own private number. Check that both calculations agree.'}</p>
+    <div className="mt-6 min-h-56 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+      {wizardStep === 0 && <div className="grid gap-4 sm:grid-cols-2">{field('Public prime (p)', 'Shared openly by both people.', prime, setPrime)}{field('Public generator (g)', 'Shared openly; both calculations start here.', generator, setGenerator)}</div>}
+      {wizardStep === 1 && <div className="grid gap-4 sm:grid-cols-2">{field('Alice’s private number (a)', 'Secret value. Only Alice should know it.', alicePrivate, setAlicePrivate, true)}{field('Bob’s private number (b)', 'Secret value. Only Bob should know it.', bobPrivate, setBobPrivate, true)}</div>}
+      {wizardStep === 2 && exchange && <div className="grid gap-4 sm:grid-cols-2"><div className="rounded-xl border border-sky-200 bg-white p-5"><h2 className="font-bold text-slate-900">Alice creates her public value</h2><p className="mt-3 font-mono text-lg text-sky-800">A = gᵃ mod p = {exchange.publicAlice.toString()}</p><p className="mt-2 text-sm text-slate-600">Her private number is used in the calculation, but is not included in the value she sends.</p></div><div className="rounded-xl border border-emerald-200 bg-white p-5"><h2 className="font-bold text-slate-900">Bob creates his public value</h2><p className="mt-3 font-mono text-lg text-emerald-800">B = gᵇ mod p = {exchange.publicBob.toString()}</p><p className="mt-2 text-sm text-slate-600">Bob keeps his private number secret and shares only this result.</p></div></div>}
+      {wizardStep === 3 && exchange && <div className="grid items-center gap-4 md:grid-cols-[1fr_auto_1fr]"><div className="rounded-xl border border-sky-200 bg-white p-5 text-center"><Users className="mx-auto h-7 w-7 text-sky-700"/><h2 className="mt-2 font-bold">Alice</h2><p className="mt-2 break-all font-mono text-sky-800">Sends A = {exchange.publicAlice.toString()}</p><p className="text-xs text-slate-500">Private number remains hidden</p></div><div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-center"><p className="text-xs font-bold uppercase text-amber-900">Public channel</p><p className="my-2 flex items-center justify-center gap-2 text-sm"><span>A</span><ArrowRight className="h-4 w-4"/><span>Bob</span></p><p className="my-2 flex items-center justify-center gap-2 text-sm"><span>B</span><ArrowRight className="h-4 w-4"/><span>Alice</span></p><p className="text-xs text-amber-900">An observer can see A and B.</p></div><div className="rounded-xl border border-emerald-200 bg-white p-5 text-center"><Users className="mx-auto h-7 w-7 text-emerald-700"/><h2 className="mt-2 font-bold">Bob</h2><p className="mt-2 break-all font-mono text-emerald-800">Sends B = {exchange.publicBob.toString()}</p><p className="text-xs text-slate-500">Private number remains hidden</p></div></div>}
+      {wizardStep === 4 && exchange && <div className="space-y-4"><div className="grid gap-4 sm:grid-cols-2"><div className="rounded-xl border border-sky-200 bg-white p-5"><h2 className="font-bold">Alice calculates</h2><p className="mt-3 break-all font-mono text-sky-800">Bᵃ mod p = {exchange.secretAlice.toString()}</p></div><div className="rounded-xl border border-emerald-200 bg-white p-5"><h2 className="font-bold">Bob calculates</h2><p className="mt-3 break-all font-mono text-emerald-800">Aᵇ mod p = {exchange.secretBob.toString()}</p></div></div><div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-semibold text-emerald-900">{exchange.secretAlice === exchange.secretBob ? 'Success: both people derived the same shared secret.' : 'The results do not match. Review the values and try again.'}</div><p className="text-sm text-slate-600">In real software, this shared value is passed through a key-derivation function and used with authenticated encryption. Basic Diffie–Hellman alone does not authenticate the other person.</p></div>}
+    </div>
+    {error && <p role="alert" className="mt-4 rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+    <div className="mt-5 flex justify-between gap-3"><button onClick={() => { setError(''); setWizardStep(step => Math.max(0, step - 1)); }} disabled={wizardStep === 0} className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold disabled:opacity-50">Back</button>{wizardStep < wizardTitles.length - 1 ? <button onClick={advanceWizard} className="rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Next</button> : <button onClick={() => setWizardOpen(false)} className="rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Finish simulation</button>}</div>
+  </section>;
 
   return <div className="space-y-5">
     <section className="rounded-xl border border-sky-200 bg-sky-50 p-5">
       <p className="text-xs font-bold uppercase tracking-wide text-sky-800">First: the key exchange idea</p>
       <h1 className="mt-1 text-xl font-bold text-slate-900">Diffie–Hellman: agree on a secret in public</h1>
       <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-700">Two people share public numbers, but each keeps a private number secret. They combine the other person’s public value with their own private value. Both sides arrive at the same shared secret without sending that secret across the network.</p>
+      <button onClick={() => { setWizardStep(0); setWizardOpen(true); setError(''); }} className="mt-4 rounded-lg bg-sky-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-800">Start guided simulation</button>
       <ol className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
         <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>1. Agree:</strong> enter the same prime and generator.</li>
         <li className="rounded-lg border border-sky-200 bg-white p-3"><strong>2. Keep private:</strong> each person enters their own secret number.</li>
