@@ -109,5 +109,33 @@ export const EccVisualizer: React.FC = () => {
       </div>
       <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">An observer can see the prime, generator, and both public values. The observer does not see Alice’s or Bob’s private number. With properly chosen large parameters, working backward from a public value to its private number is computationally difficult.</p>
     </section>}
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wide text-rose-700">Threat and defense</p>
+        <h2 className="mt-1 text-lg font-bold text-slate-900">How an attacker can interfere—and how real systems stop it</h2>
+        <p className="mt-1 text-sm text-slate-600">The simulator above shows an honest exchange. Basic Diffie–Hellman hides the shared secret from a passive listener, but it does not identify who sent each public value.</p>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+          <h3 className="font-bold text-rose-950">Attack: man in the middle</h3>
+          <ol className="mt-3 space-y-2 text-sm text-rose-950">
+            <li className="rounded-md border border-rose-200 bg-white p-3"><strong>1.</strong> Alice sends her public value to Bob. Eve intercepts it.</li>
+            <li className="rounded-md border border-rose-200 bg-white p-3"><strong>2.</strong> Eve sends her own public value to Bob, pretending it came from Alice.</li>
+            <li className="rounded-md border border-rose-200 bg-white p-3"><strong>3.</strong> Bob replies. Eve intercepts Bob’s value and sends a different Eve value to Alice.</li>
+            <li className="rounded-md border border-rose-200 bg-white p-3"><strong>4.</strong> Eve now shares one secret with Alice and another with Bob. She can relay, read, or alter messages between them.</li>
+          </ol>
+          <p className="mt-3 text-xs text-rose-900">Alice and Bob may each calculate a matching secret with Eve and still think they are talking directly to each other.</p>
+        </div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+          <h3 className="font-bold text-emerald-950">Protection: authenticate and verify</h3>
+          <ol className="mt-3 space-y-2 text-sm text-emerald-950">
+            <li className="rounded-md border border-emerald-200 bg-white p-3"><strong>1. Authenticate public values.</strong> Use a trusted certificate and digital signature to prove who owns the public key.</li>
+            <li className="rounded-md border border-emerald-200 bg-white p-3"><strong>2. Verify before accepting.</strong> Check the certificate, signature, and exchange details. Reject changed or untrusted values.</li>
+            <li className="rounded-md border border-emerald-200 bg-white p-3"><strong>3. Protect later messages.</strong> Derive session keys from the shared secret, then use authenticated encryption so tampering is detected.</li>
+          </ol>
+          <p className="mt-3 text-xs text-emerald-900">Modern secure protocols combine key exchange with authentication; Diffie–Hellman by itself is only the key agreement step.</p>
+        </div>
+      </div>
+    </section>
   </div>;
 };
